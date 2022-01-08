@@ -1,7 +1,7 @@
 from rest_framework import status, viewsets
 from rest_framework import response
 
-from api.Size import Size, Musinsa
+from api.Size import Size, Musinsa, Xexymix, Leelin
 from .models import Site, User
 from .serializers import SiteSerializer, UserSerializer, CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -61,8 +61,11 @@ def getSize(request):
                 classname = 'Size'
             match_object = Site._meta.get_field('match')
             match = match_object.value_from_object(site_object)
-            command = 'global thisSite; thisSite = {0}(url="{1}", match="{2}")'.format(
-                classname, pureUrl, match)
+            encoding_object = Site._meta.get_field('encoding')
+            encoding = encoding_object.value_from_object(site_object)
+            print(encoding)
+            command = 'global thisSite; thisSite = {0}(url="{1}", match="{2}", encoding="{3}")'.format(
+                classname, pureUrl, match, encoding)
             exec(command)
             result = thisSite.run()
             return Response(data={"result": result})
