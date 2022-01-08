@@ -53,14 +53,15 @@ class User(AbstractUser):
 
 
 class Site(models.Model):
-    sitename = CharField(max_length=100, default="")
-    match = CharField(max_length=100, default="")
-    encoding = CharField(max_length=100, default="")
+    sitename = CharField(max_length=100, default="", blank=True)
+    classname = CharField(max_length=100, default="", blank=True)
+    match = CharField(max_length=100, default="", blank=True)
+    encoding = CharField(max_length=100, default="", blank=True)
     iframe = BooleanField(default=False)
-    standard = CharField(max_length=300, default="")
+    standard = CharField(max_length=300, default="", blank=True)
     url = CharField(max_length=200, default="")
-    status = CharField(max_length=100, default="failed")
-    instruction = TextField(default="")
+    status = CharField(max_length=100, default="failed", blank=True)
+    instruction = TextField(default="", blank=True)
 
     def __str__(self):
         return self.sitename
