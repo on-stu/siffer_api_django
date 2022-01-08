@@ -1,9 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db.models.fields import BooleanField, CharField, TextField
 from django.utils.translation import ugettext_lazy as _
 
 from django.contrib.auth.base_user import BaseUserManager
-from django.utils.translation import ugettext_lazy as _
 
 
 class CustomUserManager(BaseUserManager):
@@ -50,3 +50,17 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+
+class Site(models.Model):
+    sitename = CharField(max_length=100, default="")
+    match = CharField(max_length=100, default="")
+    encoding = CharField(max_length=100, default="")
+    iframe = BooleanField(default=False)
+    standard = CharField(max_length=300, default="")
+    url = CharField(max_length=200, default="")
+    status = CharField(max_length=100, default="failed")
+    instruction = TextField(default="")
+
+    def __str__(self):
+        return self.sitename
