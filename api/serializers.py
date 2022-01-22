@@ -1,29 +1,34 @@
 from django.db import models
 from rest_framework import viewsets
 from rest_framework import serializers
-from .models import Site, User
+from .models import Product, Site, User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = "__all__"
+        fields = ['id', 'name', 'email', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
-
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        # The default result (access/refresh tokens)
-        data = super(CustomTokenObtainPairSerializer, self).validate(attrs)
-        # Custom data you want to include
-        data.update({'email': self.user.email})
-        data.update({'id': self.user.id})
-        data.update({'status': "success"})
-        # and everything else you want to send in the response
-        return data
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        instance = self.Meta.model(**validated_data)
+        if password is not None:
+            instance.set_password(password)
+        instance.save()
+        return instance
 
 
 class SiteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Site
+        fields = "__all__"
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
         fields = "__all__"

@@ -2,11 +2,26 @@ from rest_framework import status, viewsets
 from rest_framework import response
 
 from api.Size import Size, Musinsa, Xexymix, Leelin
-from .models import Site, User
-from .serializers import SiteSerializer, UserSerializer, CustomTokenObtainPairSerializer
-from rest_framework_simplejwt.views import TokenObtainPairView
+from .models import Product, Site, User
+from .serializers import ProductSerializer, SiteSerializer, UserSerializer, CustomTokenObtainPairSerializer
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
+from rest_framework.authtoken.models import Token
+
+from rest_framework.views import APIView
+
+from rest_framework.exceptions import AuthenticationFailed
+from api.serializers import UserSerializer
+
+import jwt
+import datetime
+
+
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [AllowAny]
 
 
 class SiteViewSet(viewsets.ModelViewSet):
@@ -14,14 +29,72 @@ class SiteViewSet(viewsets.ModelViewSet):
     serializer_class = SiteSerializer
 
 
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+class RegisterView(APIView):
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
-class CustomTokenObtainPairView(TokenObtainPairView):
-    # Replace the serializer with your custom
-    serializer_class = CustomTokenObtainPairSerializer
+class LoginView(APIView):
+    def post(self, request):
+        email = request.data['email']
+        password = request.data['password']
+
+        user = User.objects.filter(email=email).first()
+
+        if user is None:
+            raise AuthenticationFailed('User not found!')
+
+        if not user.check_password(password):
+            raise AuthenticationFailed('Incorrect password!')
+
+        payload = {
+            'id': user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+            'iat': datetime.datetime.utcnow()
+        }
+
+        token = jwt.encode(payload, 'secret', algorithm='HS256')
+
+        response = Response()
+
+        response.set_cookie(key='jwt', value=token, httponly=True)
+        response.data = {
+            'message': "success",
+            'token': token
+        }
+
+        return response
+
+
+class UserView(APIView):
+    def get(self, request):
+        token = request.COOKIES.get('jwt')
+
+        if not token:
+            raise AuthenticationFailed('Unauthenticated')
+
+        try:
+            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed('Unauthenticated')
+
+        user = User.objects.get(id=payload['id'])
+        serializer = UserSerializer(user)
+
+        return Response(serializer.data)
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        response = Response()
+        response.delete_cookie('jwt')
+        response.data = {
+            'message': 'success'
+        }
+        return response
 
 
 @api_view(['GET', 'POST'])
@@ -42,6 +115,7 @@ def site_list(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def getSize(request):
     if(request.method == 'POST'):
         url = request.data['url']
@@ -53,6 +127,7 @@ def getSize(request):
                 if(getUrlNum == 3):
                     url = url[0: i]
                     break
+
         try:
             site_object = Site.objects.get(url=url)
             class_object = Site._meta.get_field('classname')
@@ -63,7 +138,7 @@ def getSize(request):
             match = match_object.value_from_object(site_object)
             encoding_object = Site._meta.get_field('encoding')
             encoding = encoding_object.value_from_object(site_object)
-            print(encoding)
+
             command = 'global thisSite; thisSite = {0}(url="{1}", match="{2}", encoding="{3}")'.format(
                 classname, pureUrl, match, encoding)
             exec(command)

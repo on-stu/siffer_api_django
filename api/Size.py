@@ -17,13 +17,13 @@ class Size():
         data.encoding = self.encoding
 
         response = data.text
-        print(response)
+
         if self.match:
             table = pd.read_html(response, header=0,
                                  encoding='utf-8', match=self.match)[0]
         else:
             table = pd.read_html(response, header=0,
-                                 encoding='utf-8', match=self.match)[0]
+                                 encoding='utf-8')[0]
 
         df = table.to_dict('records')
 
@@ -89,7 +89,7 @@ class Leelin(Xexymix):
 
     def run(self):
         productCode = self.injectNewUrl()
-        self.url = 'https://fit3.cre.ma/leelin.co.kr/fit/products/{0}/size_detail'.format(
+        self.url = 'https://fit3.cre.ma/leelin.co.kr/fit/products/{0}/size_detail?tab=comparison'.format(
             productCode)
         result = self.getSizeTable()
         return result

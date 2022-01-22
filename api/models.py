@@ -1,55 +1,20 @@
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.db.models.fields import BooleanField, CharField, TextField
+from django.db.models.fields import BooleanField, CharField, IntegerField, TextField
 from django.utils.translation import ugettext_lazy as _
 
 from django.contrib.auth.base_user import BaseUserManager
 
 
-class CustomUserManager(BaseUserManager):
-    """
-    Custom user model manager where email is the unique identifiers
-    for authentication instead of usernames.
-    """
-
-    def create_user(self, email, password, **extra_fields):
-        """
-        Create and save a User with the given email and password.
-        """
-        if not email:
-            raise ValueError(_('The Email must be set'))
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save()
-        return user
-
-    def create_superuser(self, email, password, **extra_fields):
-        """
-        Create and save a SuperUser with the given email and password.
-        """
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)
-
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError(_('Superuser must have is_staff=True.'))
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError(_('Superuser must have is_superuser=True.'))
-        return self.create_user(email, password, **extra_fields)
-
-
 class User(AbstractUser):
+    name = models.CharField(max_length=255)
+    email = models.CharField(max_length=255, unique=True)
+    password = models.CharField(max_length=255)
     username = None
-    email = models.EmailField(_('email address'), unique=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
-
-    objects = CustomUserManager()
-
-    def __str__(self):
-        return self.email
 
 
 class Site(models.Model):
@@ -65,3 +30,18 @@ class Site(models.Model):
 
     def __str__(self):
         return self.sitename
+
+
+class Product(models.Model):
+    productName = CharField(max_length=100, default='', blank=True)
+    instruction = TextField(blank=True)
+    price = IntegerField(default=0, blank=True)
+    mainPhoto = TextField(null=True)
+    color = CharField(blank=False, max_length=100)
+    size = TextField(null=True)
+    madeOf = TextField(null=True)
+    modelSize = TextField(null=True)
+    review = TextField(null=True)
+
+    def __str__(self) -> str:
+        return self.productName
