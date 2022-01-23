@@ -1,20 +1,19 @@
 
+from re import T
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models.fields import BooleanField, CharField, IntegerField, TextField
 from django.utils.translation import ugettext_lazy as _
-
-from django.contrib.auth.base_user import BaseUserManager
 
 
 class User(AbstractUser):
     name = models.CharField(max_length=255)
     email = models.CharField(max_length=255, unique=True)
     password = models.CharField(max_length=255)
-    username = None
-
+    username = models.CharField(blank=True, null=True, max_length=150)
+    userSize = models.TextField(blank=True, default="")
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ['username']
 
 
 class Site(models.Model):
@@ -41,7 +40,7 @@ class Product(models.Model):
     size = TextField(null=True)
     madeOf = TextField(null=True)
     modelSize = TextField(null=True)
-    review = TextField(null=True)
+    review = TextField(null=True, blank=True)
 
     def __str__(self) -> str:
         return self.productName

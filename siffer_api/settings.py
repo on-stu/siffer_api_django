@@ -29,11 +29,10 @@ DEBUG = True
 ALLOWED_HOSTS = []
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
-        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ),
 }
 
@@ -48,7 +47,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api',
     'rest_framework',
-    'corsheaders'
+    'corsheaders',
+    'rest_framework.authtoken',
 ]
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
@@ -59,12 +59,8 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 REST_USE_JWT = True
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': True,
-}
+
+SESSION_COOKIE_HTTPONLY = False
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -81,7 +77,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
-
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
     "DELETE",
     "GET",
@@ -91,6 +87,9 @@ CORS_ALLOW_METHODS = [
     "PUT",
 ]
 ALLOWED_HOSTS = ['*']
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
 
 ROOT_URLCONF = 'siffer_api.urls'
 

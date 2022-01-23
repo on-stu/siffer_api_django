@@ -1,8 +1,7 @@
-from django.db import models
-from rest_framework import viewsets
+
+from rest_framework.authtoken.models import Token
 from rest_framework import serializers
 from .models import Product, Site, User
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -19,6 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
         if password is not None:
             instance.set_password(password)
         instance.save()
+        Token.objects.create(user=instance)
         return instance
 
 

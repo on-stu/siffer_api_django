@@ -3,14 +3,14 @@ from rest_framework import response
 
 from api.Size import Size, Musinsa, Xexymix, Leelin
 from .models import Product, Site, User
-from .serializers import ProductSerializer, SiteSerializer, UserSerializer, CustomTokenObtainPairSerializer
+from .serializers import ProductSerializer, SiteSerializer, UserSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.authtoken.models import Token
 
 from rest_framework.views import APIView
-
+from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import AuthenticationFailed
 from api.serializers import UserSerializer
 
@@ -21,10 +21,11 @@ import datetime
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class SiteViewSet(viewsets.ModelViewSet):
+    permission_classes = [AllowAny]
     queryset = Site.objects.all()
     serializer_class = SiteSerializer
 
@@ -34,6 +35,7 @@ class RegisterView(APIView):
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
         return Response(serializer.data)
 
 
@@ -42,49 +44,37 @@ class LoginView(APIView):
         email = request.data['email']
         password = request.data['password']
 
-        user = User.objects.filter(email=email).first()
+        user = User.objects.get(email=email)
 
         if user is None:
             raise AuthenticationFailed('User not found!')
 
         if not user.check_password(password):
             raise AuthenticationFailed('Incorrect password!')
+        try:
+            token = Token.objects.get(user_id=user.id)
 
-        payload = {
-            'id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
-            'iat': datetime.datetime.utcnow()
-        }
-
-        token = jwt.encode(payload, 'secret', algorithm='HS256')
+        except Token.DoesNotExist:
+            token = Token.objects.create(user=user)
 
         response = Response()
 
-        response.set_cookie(key='jwt', value=token, httponly=True)
+        response.set_cookie(key='jwt', value=token.key,)
         response.data = {
             'message': "success",
-            'token': token
+            'token': token.key
         }
 
         return response
 
 
 class UserView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
-        token = request.COOKIES.get('jwt')
+        user = UserSerializer(request.user)
 
-        if not token:
-            raise AuthenticationFailed('Unauthenticated')
-
-        try:
-            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
-        except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed('Unauthenticated')
-
-        user = User.objects.get(id=payload['id'])
-        serializer = UserSerializer(user)
-
-        return Response(serializer.data)
+        return Response(user.data)
 
 
 class LogoutView(APIView):
@@ -95,23 +85,6 @@ class LogoutView(APIView):
             'message': 'success'
         }
         return response
-
-
-@api_view(['GET', 'POST'])
-def site_list(request):
-    # get all articles
-    if (request.method == 'GET'):
-        articles = Site.objects.all()
-        serializer = SiteSerializer(articles, many=True)
-        return Response(serializer.data)
-    elif(request.method == 'POST'):
-        serializer = SiteSerializer(data=request.data)
-        print(request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print(serializer.error_messages)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
